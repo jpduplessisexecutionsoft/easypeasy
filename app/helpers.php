@@ -6,6 +6,6 @@ if (!function_exists('runBackgroundJob')) {
         $class = escapeshellarg($class);
         $method = escapeshellarg($method);
 
-        exec("php ../scripts/run-job.php $class $method $paramString");
+        exec("php scripts/run-job.php $class $method $paramString");
     }
 }

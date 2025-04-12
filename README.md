@@ -8,12 +8,13 @@
 
 ## instructions on how to use runBackgroundJob().
 - This is a helper function, and without namespace.  It can be called within any controller or other form of that executes functions within Laravel.  However, not within the run-job.php script as it will case an infinite loop.
+- It can also be called via command line like so: php artisan app:run-easy-peasy Calculator addition "5,10"
 
 ## Examples of called background jobs:
-> The following two examples are command line examples of calling run-job.php with a small Calculator script i put together for testing.  It will execute and store all required data in the designated logs, as required by the test.
+> The following two examples are command line examples of calling run-job.php with a small Calculator script i put together for testing.  It will execute and store all required data in the designated logs, as described by the test.
 
-- php run-job.php Calculator addition "1,2"
-- php run-job.php Calculator subtraction "1,2"
+- php artisan app:run-easy-peasy Calculator addition "5,10"
+- php artisan app:run-easy-peasy Calculator subtraction "1,2"
 
 ### Instructions on how to configure retry attempts and delays
 > in order to configure the retry attemps, a variable called "$retries" exists on line 47 of the run-job.php script and can be changed.
