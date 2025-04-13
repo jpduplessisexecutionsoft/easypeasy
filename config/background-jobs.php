@@ -5,7 +5,7 @@ return [
     'allowed_jobs' => [
 
         // Format: ClassName => [allowed methods]
-        \Calculator::class => ['addition', 'subtract'],
+        \Calculator::class => ['addition'],
     ],
 
 ];
