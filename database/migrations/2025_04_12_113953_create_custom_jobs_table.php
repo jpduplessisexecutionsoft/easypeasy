@@ -16,11 +16,11 @@ return new class extends Migration
             $table->string('class');
             $table->string('method');
             $table->json('params');
-            $table->enum('status', ['pending', 'running', 'success', 'failed', 'canceled'])->default('pending');
+            $table->enum('status', ['running', 'completed', 'failed'])->default('running');
             $table->text('output')->nullable();
             $table->integer('attempts')->default(0);
             $table->timestamp('last_attempt_at')->nullable();
-            $table->unsignedInteger('pid')->nullable();
+            $table->boolean('execute')->default(true);
             $table->timestamps();
         });
 

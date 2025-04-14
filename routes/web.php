@@ -23,9 +23,12 @@ Route::get('/background_jobs', function () {
     return response(['log' => $log]);
 });
 
-Route::post('/dispatch-jobs', [JobRunnerController::class, 'dispatch']);
-
-Route::post('/cancel/{job}', [JobRunnerController::class, 'cancel']);
+Route::post('/cancel/{job}', function (int $id) {
+    $job = CustomJob::where('id',$id)->first();
+    $job->update([
+        'execute' => false
+    ]);
+});
 
 Route::get('/jobs', function () {
     return CustomJob::orderBy('created_at', 'desc')->get();

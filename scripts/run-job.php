@@ -22,7 +22,7 @@ $script = array_shift($args);
 
 // make sure that all arguments required were given
 if (count($args) < 3) {
-    echo "Usage: php run-job.php <ClassName> <methodName> <\"param1,param2\">\n";
+    Log::channel('background_jobs_errors')->info("Usage: php run-job.php <ClassName> <methodName> <\"param1,param2\">\n");
     exit(1);
 }
 

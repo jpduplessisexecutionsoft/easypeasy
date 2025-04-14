@@ -9,12 +9,12 @@ if (!function_exists('runBackgroundJob')) {
         $allowedJobs = config('background-jobs.allowed_jobs');
 
         if (!array_key_exists($class, $allowedJobs)) {
-            Log::channel('background_jobs_errors')->debug("Error: Class '$class' is not allowed.");
+            Log::channel('background_jobs_errors')->error("Error: Class '$class' is not allowed.");
             return;
         }
 
         if (!in_array($method, $allowedJobs[$class])) {
-            Log::channel('background_jobs_errors')->debug("Error: Method '$method' is not allowed for class '$class'");
+            Log::channel('background_jobs_errors')->error("Error: Method '$method' is not allowed for class '$class'");
             return;
         }
 
@@ -23,38 +23,78 @@ if (!function_exists('runBackgroundJob')) {
             'class' => $class,
             'method' => $method,
             'params' => $params,
+            'execute' => true
         ]);
 
-        Log::channel('background_jobs')->info("Job Created", [
-            'class' => $job->class,
-            'method' => $job->method,
-            'status' => 'pending',
-            'params' => $job->params,
-            'timestamp' => now()->toDateTimeString(),
-        ]);
+        while (CustomJob::where('id', $job->id)->where('execute',true)->first()) {
 
+            $job->update([
+                'status' => 'running',
+                'attempts' => $job->attempts + 1,
+                'last_attempt_at' => now(),
+            ]);
 
-        $descriptorspec = [
-            0 => ['pipe', 'r'], // stdin
-            1 => ['pipe', 'w'], // stdout
-            2 => ['pipe', 'w'], // stderr
-        ];
+            try {
+                Log::channel('background_jobs')->info("Job Running", [
+                    'class' => $job->class,
+                    'method' => $job->method,
+                    'status' => 'running',
+                    'params' => $job->params,
+                    'timestamp' => now()->toDateTimeString(),
+                ]);
 
-        $process = proc_open('php ' . base_path('artisan') . ' custom-jobs:process', $descriptorspec, $pipes);
-        
+                $class = "App\\CustomJobs\\{$job->class}";
+                $instance = new $class;
 
-        if (is_resource($process)) {
-            echo 'The process is running';
+                $result = call_user_func([$instance, $job->method], $job->params);
 
-            $pid = proc_get_status($process)['pid'];
-            // Save the pid to your job model
-            $job->update(['pid' => $pid]);
-            
+                $job->update([
+                    'status' => 'completed',
+                    'output' => json_encode($result),
+                    'execute' => false,
+                ]);
 
-            while (proc_get_status($process)['running']) {
-                usleep(10);
-            }    
+                Log::channel('background_jobs')->info("Job Completed", [
+                    'class' => $job->class,
+                    'method' => $job->method,
+                    'status' => 'completed',
+                    'result' => $result,
+                    'params' => $job->params,
+                    'timestamp' => now()->toDateTimeString(),
+                ]);
 
+            } catch (\Throwable $e) {
+
+                Log::channel('background_jobs_errors')->error("Job Failed: ", [
+                    'class' => $job->class,
+                    'method' => $job->method,
+                    'params' => $job->params
+                ]);
+
+                Log::channel('background_jobs')->info("Job Failed", [
+                    'class' => $job->class,
+                    'method' => $job->method,
+                    'status' => 'failed',
+                    'params' => $job->params,
+                    'timestamp' => now()->toDateTimeString(),
+                ]);
+
+                $job->update([
+                    'status' => 'failed',
+                    'output' => $e->getMessage(),
+                ]);
+
+            }
+
+            sleep(config('easypeasy.delay'));
+
+            if ($job->attempts >= config('easypeasy.attempts')) {
+                $job->update([
+                    'status' => 'failed',
+                    'execute' => false,
+                ]);
+            }
+  
         }
 
     }

@@ -2,7 +2,7 @@
 
 return [
 
-    'attempts' => 3,
-    'delay' => 1,
+    'attempts' => 10,
+    'delay' => 1, //in seconds
 
 ];
